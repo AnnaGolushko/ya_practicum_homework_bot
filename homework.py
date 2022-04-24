@@ -13,18 +13,6 @@ import exceptions
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-stream_logging = logging.StreamHandler()
-stream_logging.setLevel(logging.DEBUG)
-formatter = logging.Formatter(
-    ('%(asctime)s, '
-        '%(levelname)s, '
-        '%(funcName)s, '
-        '%(lineno)d, '
-        '%(message)s')
-)
-stream_logging.setFormatter(formatter)
-logger.addHandler(stream_logging)
 
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -174,4 +162,17 @@ def main():
 
 
 if __name__ == '__main__':
+    logger.setLevel(logging.DEBUG)
+    stream_logging = logging.StreamHandler()
+    stream_logging.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        ('%(asctime)s, '
+            '%(levelname)s, '
+            '%(funcName)s, '
+            '%(lineno)d, '
+            '%(message)s')
+    )
+    stream_logging.setFormatter(formatter)
+    logger.addHandler(stream_logging)
+
     main()
