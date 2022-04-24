@@ -30,3 +30,7 @@ class UnknownHomeworkStatus(Exception):
     В ответе API получен неизвестный статус
     проверки домашней работы.
     """
+
+
+class EmptyHomeworksList(Exception):
+    """Ответ API практикума вернул пустой список домашних работ."""

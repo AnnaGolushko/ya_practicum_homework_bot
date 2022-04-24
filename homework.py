@@ -44,8 +44,12 @@ HOMEWORK_VERDICTS = {
 
 def send_message(bot, message):
     """Отправка в телеграмм сообщения о статусе домашней работы."""
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-    logger.info(f'Бот отправил сообщение: {message}')
+    try:
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        logger.info(f'Бот отправил сообщение: {message}')
+    except Exception as error:
+        message = f'Сбой при отправке сообщения в телеграмм: {error}'
+        logger.error(message)
 
 
 def get_api_answer(current_timestamp):
@@ -79,25 +83,25 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Функция проверки, что ответ API соответствует ожиданиям."""
-    if isinstance(response, dict):
-        homeworks = response.get('homeworks')
+    if not isinstance(response, dict):
+        raise TypeError('Ответ API имеет тип отличный от Dict')
+    homeworks = response.get('homeworks')
 
-        if isinstance(homeworks, list):
-            if 'homeworks' not in response:
-                raise exceptions.HomeworksNotInResponse(
-                    'Ответ API не вернул список домашних работ'
-                )
-            if 'current_date' not in response:
-                raise exceptions.CurrentDateNotInResponse(
-                    'Ответ API не содержит информацию о метке даты-времени'
-                )
-            return response.get('homeworks')
-
+    if not isinstance(homeworks, list):
         raise TypeError(
             'В ответе API объект homeworks имеет тип отличный от List'
         )
 
-    raise TypeError('Ответ API имеет тип отличный от Dict')
+    if 'homeworks' not in response:
+        raise exceptions.HomeworksNotInResponse(
+            'Ответ API не вернул список домашних работ'
+        )
+
+    if 'current_date' not in response:
+        raise exceptions.CurrentDateNotInResponse(
+            'Ответ API не содержит информацию о метке даты-времени'
+        )
+    return response.get('homeworks')
 
 
 def parse_status(homework):
@@ -150,9 +154,12 @@ def main():
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            print(response)
             homeworks = check_response(response)
             current_timestamp = int(time.time())
+            if len(homeworks) == 0:
+                raise exceptions.EmptyHomeworksList(
+                    'Ответ API практикума вернул пустой список домашних работ'
+                )
             homework = homeworks[0]
             if current_status != homework['status']:
                 parse_message = parse_status(homework)
@@ -161,8 +168,7 @@ def main():
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
-            bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-            logger.info(f'Бот отправил сообщение: {message}')
+            send_message(bot, message)
         finally:
             time.sleep(RETRY_TIME)
 
