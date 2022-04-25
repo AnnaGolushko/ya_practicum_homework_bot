@@ -36,8 +36,9 @@ def send_message(bot, message):
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logger.info(f'Бот отправил сообщение: {message}')
     except Exception as error:
-        message = f'Сбой при отправке сообщения в телеграмм: {error}'
-        logger.error(message)
+        raise exceptions.BotSendingMessageError(
+            f'Сбой при отправке сообщения в телеграмм: {error}'
+        )
 
 
 def get_api_answer(current_timestamp):
@@ -128,7 +129,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     result = check_tokens()
-    if result is False:
+    if not result:
         logger.critical(
             'Одна или более переменных окружения не определены. '
             'Работа программы остановлена.'
@@ -144,19 +145,26 @@ def main():
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
             current_timestamp = int(time.time())
-            if len(homeworks) == 0:
-                raise exceptions.EmptyHomeworksList(
-                    'Ответ API практикума вернул пустой список домашних работ'
+            if not homeworks:
+                logger.info(
+                    'Ответ API практикума вернул '
+                    'пустой список домашних работ'
                 )
-            homework = homeworks[0]
-            if current_status != homework['status']:
-                parse_message = parse_status(homework)
-                send_message(bot, parse_message)
-                current_status = homework['status']
+                current_status = 'Новых домашних работ для проверки пока нет'
+                send_message(bot, current_status)
+            else:
+                homework = homeworks[0]
+                if current_status != homework['status']:
+                    parse_message = parse_status(homework)
+                    send_message(bot, parse_message)
+                    current_status = homework['status']
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
-            send_message(bot, message)
+            occured_error_type = type(error).__name__
+            bot_error_type = exceptions.BotSendingMessageError.__name__
+            if occured_error_type != bot_error_type:
+                send_message(bot, message)
         finally:
             time.sleep(RETRY_TIME)
 

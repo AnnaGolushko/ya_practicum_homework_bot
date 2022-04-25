@@ -32,5 +32,5 @@ class UnknownHomeworkStatus(Exception):
     """
 
 
-class EmptyHomeworksList(Exception):
-    """Ответ API практикума вернул пустой список домашних работ."""
+class BotSendingMessageError(Exception):
+    """Ошибка при отправке сообщения в телеграмм-бот."""
