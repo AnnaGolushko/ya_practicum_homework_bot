@@ -172,7 +172,7 @@ def main():
                 send_message(bot, message)
                 current_error_status = occured_error_type
         finally:
-            time.sleep(10)
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
