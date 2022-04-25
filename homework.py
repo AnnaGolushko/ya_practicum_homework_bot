@@ -156,10 +156,10 @@ def main():
                     send_message(bot, current_status)
             else:
                 homework = homeworks[0]
-            if current_status != homework['status']:
-                parse_message = parse_status(homework)
-                send_message(bot, parse_message)
-                current_status = homework['status']
+                if current_status != homework['status']:
+                    parse_message = parse_status(homework)
+                    send_message(bot, parse_message)
+                    current_status = homework['status']
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
