@@ -139,6 +139,7 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     current_status = None
+    current_error_status = None
 
     while True:
         try:
@@ -150,23 +151,28 @@ def main():
                     'Ответ API практикума вернул '
                     'пустой список домашних работ'
                 )
-                current_status = 'Новых домашних работ для проверки пока нет'
-                send_message(bot, current_status)
+                if current_status != 'Новых домашних работ для проверки нет':
+                    current_status = 'Новых домашних работ для проверки нет'
+                    send_message(bot, current_status)
             else:
                 homework = homeworks[0]
-                if current_status != homework['status']:
-                    parse_message = parse_status(homework)
-                    send_message(bot, parse_message)
-                    current_status = homework['status']
+            if current_status != homework['status']:
+                parse_message = parse_status(homework)
+                send_message(bot, parse_message)
+                current_status = homework['status']
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
             occured_error_type = type(error).__name__
             bot_error_type = exceptions.BotSendingMessageError.__name__
-            if occured_error_type != bot_error_type:
+            if (
+                occured_error_type != bot_error_type
+                and current_error_status != occured_error_type
+            ):
                 send_message(bot, message)
+                current_error_status = occured_error_type
         finally:
-            time.sleep(RETRY_TIME)
+            time.sleep(10)
 
 
 if __name__ == '__main__':
@@ -175,10 +181,10 @@ if __name__ == '__main__':
     stream_logging.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
         ('%(asctime)s, '
-            '%(levelname)s, '
-            '%(funcName)s, '
-            '%(lineno)d, '
-            '%(message)s')
+         '%(levelname)s, '
+         '%(funcName)s, '
+         '%(lineno)d, '
+         '%(message)s')
     )
     stream_logging.setFormatter(formatter)
     logger.addHandler(stream_logging)
