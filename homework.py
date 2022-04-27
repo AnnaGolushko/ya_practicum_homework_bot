@@ -139,7 +139,7 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     current_status = None
-    current_error_status = None
+    previous_status = None
 
     while True:
         try:
@@ -151,26 +151,25 @@ def main():
                     'Ответ API практикума вернул '
                     'пустой список домашних работ'
                 )
-                if current_status != 'Новых домашних работ для проверки нет':
-                    current_status = 'Новых домашних работ для проверки нет'
-                    send_message(bot, current_status)
+                current_status = 'Новых домашних работ для проверки нет'
             else:
                 homework = homeworks[0]
-                if current_status != homework['status']:
-                    parse_message = parse_status(homework)
-                    send_message(bot, parse_message)
-                    current_status = homework['status']
-        except Exception as error:
-            message = f'Сбой в работе программы: {error}'
+                current_status = parse_status(homework)
+
+            if current_status != previous_status:
+                send_message(bot, current_status)
+                previous_status = current_status
+            else:
+                logger.info('Статус проверки домашней работы не изменился')
+        except exceptions.BotSendingMessageError as error:
+            message = f'Ошибка отправки сообщения: {type(error).__name__}'
             logger.error(message)
-            occured_error_type = type(error).__name__
-            bot_error_type = exceptions.BotSendingMessageError.__name__
-            if (
-                occured_error_type != bot_error_type
-                and current_error_status != occured_error_type
-            ):
+        except Exception as error:
+            message = f'Сбой в работе программы: {type(error).__name__}'
+            logger.error(message)
+            if (current_status != message):
                 send_message(bot, message)
-                current_error_status = occured_error_type
+                current_status = message
         finally:
             time.sleep(RETRY_TIME)
 
